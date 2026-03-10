@@ -88,8 +88,22 @@ enum Commands {
         domain: String,
     },
     
-    /// Show common workflows and examples
-    Help,
+    /// Show a recipe (workflow guide)
+    Recipe {
+        #[command(subcommand)]
+        action: RecipeAction,
+    },
+}
+
+#[derive(Subcommand)]
+enum RecipeAction {
+    /// List all available recipes
+    List,
+    /// Show a specific recipe
+    Show {
+        /// Recipe name (e.g., create-site, check-domain)
+        name: String,
+    },
 }
 
 fn aws(args: &[&str]) -> Result<Value, String> {
@@ -588,61 +602,84 @@ fn main() {
             }
         }
 
-        Commands::Help => {
-            println!(r#"
+        Commands::Recipe { action } => {
+            match action {
+                RecipeAction::List => {
+                    let recipes = get_recipes_index();
+                    println!("{}", recipes);
+                }
+                RecipeAction::Show { name } => {
+                    match get_recipe(&name) {
+                        Some(content) => println!("{}", content),
+                        None => {
+                            eprintln!("{} Recipe '{}' not found.", "Error:".red().bold(), name);
+                            eprintln!("\nAvailable recipes:");
+                            eprintln!("  create-site      - Create and deploy a new site");
+                            eprintln!("  check-domain     - Check if a domain is available");
+                            eprintln!("  buy-domain       - Purchase a domain through AWS");
+                            eprintln!("  add-subdomain    - Add a subdomain to a site");
+                            eprintln!("  setup-ssl        - Configure SSL/HTTPS");
+                            eprintln!("  estimate-costs   - Estimate monthly costs");
+                            eprintln!("  view-costs       - View current AWS spending");
+                            eprintln!("  hosting-frontend - Host a frontend site");
+                            eprintln!("  hosting-vps      - Set up a VPS on EC2");
+                            eprintln!("  commands         - Quick command reference");
+                            std::process::exit(1);
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+fn get_recipes_index() -> &'static str {
+    r#"
 ╔══════════════════════════════════════════════════════════════════╗
-║                    OneButtonSite CLI Workflows                   ║
+║                    OneButtonSite Recipes                         ║
 ╚══════════════════════════════════════════════════════════════════╝
 
-┌─ CREATE A NEW SITE ─────────────────────────────────────────────┐
-│                                                                  │
-│   1. Create the site:                                           │
-│      obs create my-site ./sites/my-site                         │
-│                                                                  │
-│   2. Note the appId in the output (e.g., abc123xyz)             │
-│                                                                  │
-└──────────────────────────────────────────────────────────────────┘
+Usage: obs recipe show <recipe-name>
 
-┌─ UPDATE AN EXISTING SITE ───────────────────────────────────────┐
-│                                                                  │
-│   1. Find your app ID:                                          │
-│      obs apps                                                   │
-│                                                                  │
-│   2. Deploy updates:                                            │
-│      obs update <app-id> ./sites/my-site                        │
-│                                                                  │
-└──────────────────────────────────────────────────────────────────┘
+┌─ DEPLOYMENT ────────────────────────────────────────────────────┐
+│  create-site       Create and deploy a new static site          │
+│  hosting-frontend  Host a frontend site on AWS Amplify          │
+│  hosting-vps       Set up a VPS on AWS EC2                      │
+└─────────────────────────────────────────────────────────────────┘
 
-┌─ ADD A CUSTOM DOMAIN ───────────────────────────────────────────┐
-│                                                                  │
-│   For root domain (example.com + www):                          │
-│      obs domain <app-id> example.com                            │
-│                                                                  │
-│   For subdomain (blog.example.com):                             │
-│      obs subdomain <app-id> blog example.com                    │
-│                                                                  │
-│   Then add DNS records shown in the output to Route53.          │
-│                                                                  │
-└──────────────────────────────────────────────────────────────────┘
+┌─ DOMAINS ───────────────────────────────────────────────────────┐
+│  check-domain      Check if a domain is available to purchase   │
+│  buy-domain        Purchase a domain through AWS Route53        │
+│  add-subdomain     Add a subdomain to an existing site          │
+│  setup-ssl         Configure SSL/HTTPS for your domain          │
+└─────────────────────────────────────────────────────────────────┘
 
-┌─ CHECK DOMAIN AVAILABILITY ─────────────────────────────────────┐
-│                                                                  │
-│   obs check-domain mycoolsite.com                               │
-│                                                                  │
-└──────────────────────────────────────────────────────────────────┘
+┌─ COSTS & BILLING ───────────────────────────────────────────────┐
+│  estimate-costs    Estimate monthly costs before taking action  │
+│  view-costs        View current AWS spending and breakdown      │
+└─────────────────────────────────────────────────────────────────┘
 
-┌─ CHECK STATUS ──────────────────────────────────────────────────┐
-│                                                                  │
-│   Check domain/SSL status:                                      │
-│      obs status <app-id>                                        │
-│                                                                  │
-│   Status meanings:                                              │
-│   • AVAILABLE = Ready to use                                    │
-│   • PENDING_VERIFICATION = Add SSL validation CNAME             │
-│   • AWAITING_APP_CNAME = Waiting for DNS propagation            │
-│                                                                  │
-└──────────────────────────────────────────────────────────────────┘
-"#);
-        }
+┌─ REFERENCE ─────────────────────────────────────────────────────┐
+│  commands          All CLI commands at a glance                 │
+└─────────────────────────────────────────────────────────────────┘
+
+Example: obs recipe show create-site
+"#
+}
+
+fn get_recipe(name: &str) -> Option<&'static str> {
+    match name {
+        "create-site" => Some(include_str!("../recipes/create-site.md")),
+        "check-domain" => Some(include_str!("../recipes/check-domain.md")),
+        "buy-domain" => Some(include_str!("../recipes/buy-domain.md")),
+        "add-subdomain" => Some(include_str!("../recipes/add-subdomain.md")),
+        "setup-ssl" => Some(include_str!("../recipes/setup-ssl.md")),
+        "estimate-costs" => Some(include_str!("../recipes/estimate-costs.md")),
+        "view-costs" => Some(include_str!("../recipes/view-costs.md")),
+        "hosting-frontend" => Some(include_str!("../recipes/hosting-frontend.md")),
+        "hosting-vps" => Some(include_str!("../recipes/hosting-vps.md")),
+        "commands" => Some(include_str!("../recipes/commands.md")),
+        "index" => Some(include_str!("../recipes/index.md")),
+        _ => None,
     }
 }
