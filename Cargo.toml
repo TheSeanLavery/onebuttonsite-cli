@@ -4,9 +4,15 @@ version = "0.1.0"
 edition = "2021"
 description = "Deploy static sites to AWS Amplify with one command"
 license = "MIT"
-repository = "https://github.com/seanlavery/onebuttonsite-cli"
+repository = "https://github.com/TheSeanLavery/onebuttonsite-cli"
+homepage = "https://github.com/TheSeanLavery/onebuttonsite-cli"
+readme = "README.md"
 keywords = ["aws", "amplify", "deploy", "cli", "static-site"]
 categories = ["command-line-utilities", "web-programming"]
+
+[[bin]]
+name = "obs"
+path = "src/main.rs"
 
 [dependencies]
 clap = { version = "4", features = ["derive"] }
