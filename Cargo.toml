@@ -1,0 +1,21 @@
+[package]
+name = "onebuttonsite"
+version = "0.1.0"
+edition = "2021"
+description = "Deploy static sites to AWS Amplify with one command"
+license = "MIT"
+repository = "https://github.com/seanlavery/onebuttonsite-cli"
+keywords = ["aws", "amplify", "deploy", "cli", "static-site"]
+categories = ["command-line-utilities", "web-programming"]
+
+[dependencies]
+clap = { version = "4", features = ["derive"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+tokio = { version = "1", features = ["full"] }
+colored = "2"
+
+[profile.release]
+lto = true
+strip = true
+opt-level = "z"
